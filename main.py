@@ -113,8 +113,8 @@ def main():
                 }
                 print(msg)
                 osc_client.send_message("/tempo/beat", json.dumps(msg))
-                osc_client.send_message("/tempo/qlc", 255)
-                osc_client.send_message("/tempo/qlc", 0)
+                osc_client.send_message("/tempo/tap", 255)
+                osc_client.send_message("/tempo/tap", 0)
 
 
     out_processor = [beat_processor, outproc]
