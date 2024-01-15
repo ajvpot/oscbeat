@@ -10,6 +10,7 @@ from __future__ import absolute_import, division, print_function
 import argparse
 import json
 
+import mido
 from pythonosc import udp_client
 
 from madmom.audio import SignalProcessor
@@ -67,10 +68,12 @@ def main():
 
     ''')
 
-    p.add_argument("--ip", default="127.0.0.1",
-                        help="The ip of the OSC server")
+    p.add_argument("--ip",
+                        help="Enable OSC. The ip of the OSC server")
     p.add_argument("--port", type=int, default=7700,
                         help="The port the OSC server is listening on")
+    p.add_argument("--midi",
+                        help="The MIDI port to output to")
 
     # version
     p.add_argument('--version', action='version',
@@ -101,8 +104,15 @@ def main():
     beat_processor = DBNBeatTrackingProcessor(**vars(args))
 
 
-    osc_client = udp_client.SimpleUDPClient(args.ip, args.port)
+    port = None
+    if args.midi:
+        port = mido.open_output(args.midi)
+
+    osc_client = None
+    if args.ip:
+        osc_client = udp_client.SimpleUDPClient(args.ip, args.port)
     print(args.ip, args.port)
+
     def outproc(beats, *_):
         if beats.size > 0:
             for beat in beats:
@@ -112,9 +122,13 @@ def main():
                     "counter": beat_processor.counter
                 }
                 print(msg)
-                osc_client.send_message("/tempo/beat", json.dumps(msg))
-                osc_client.send_message("/tempo/tap", 255)
-                osc_client.send_message("/tempo/tap", 0)
+                if osc_client:
+                    osc_client.send_message("/tempo/beat", json.dumps(msg))
+                    osc_client.send_message("/tempo/tap", 255)
+                    osc_client.send_message("/tempo/tap", 0)
+                if port:
+                    port.send(mido.Message('note_on', note=60))
+                    port.send(mido.Message('note_off', note=60))
 
 
     out_processor = [beat_processor, outproc]
