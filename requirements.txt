@@ -1,0 +1,3 @@
+python-osc
+pyaudio
+git+https://github.com/CPJKU/madmom#egg=madmom
